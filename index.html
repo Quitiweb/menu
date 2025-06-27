@@ -3,67 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planificador de Menú Familiar de Verano</title>
+    <title>Planificador de Menú Mensual Familiar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <!-- Chosen Palette: Warm Neutrals -->
-    <!-- Application Structure Plan: He diseñado una SPA de tipo dashboard con navegación fija superior para un acceso rápido a las 4 secciones clave: Menú Semanal (vista por defecto), Recetario, Lista de Compra y Guía Nutricional. Esta estructura orientada a tareas es más útil que el formato lineal del informe. El usuario puede ver qué toca comer hoy, hacer clic para ver la receta, marcar ingredientes en la lista de la compra o consultar la información nutricional. El flujo es intuitivo: seleccionar un día en el menú revela las comidas, y cada comida enlaza a su receta detallada en formato acordeón para no saturar la vista. Esta arquitectura prioriza la usabilidad y la rapidez en la consulta de información. -->
-    <!-- Visualization & Content Choices: Menú -> Calendario interactivo (HTML/JS) para seleccionar el día. Recetas -> Acordeones (HTML/JS) para mostrar/ocultar contenido y mantener la interfaz limpia. Lista de Compra -> Checklist interactiva (HTML/JS) para usabilidad en el supermercado. Guía Nutricional -> Texto y un gráfico de barras (Chart.js/Canvas) para visualizar de forma clara y atractiva el aumento de nutrientes recomendados para la madre lactante, haciendo la información cuantitativa más digerible. Se usan iconos Unicode para añadir pistas visuales sin usar imágenes. -->
+    <!-- Application Structure Plan: La app se reestructura a una SPA con navegación por semanas (1-4). La vista principal es una tabla de menú interactiva. Al hacer clic en un plato, se abre un modal con la receta, mejorando la UX al no perder el contexto. Cada semana tiene su propia lista de la compra dinámica. Esta arquitectura modular gestiona la información de forma más limpia y responde directamente a la petición del usuario de separar el contenido y mejorar la visualización. -->
+    <!-- Visualization & Content Choices: El menú semanal se presenta en una tabla HTML/JS para una visualización clara. Las recetas se muestran en un modal (ventana emergente) creado con HTML/CSS/JS. Se mantiene el gráfico de Chart.js en la guía nutricional. La navegación entre semanas actualiza dinámicamente la tabla y la lista de compras. Esta aproximación es más interactiva y organizada. -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         body { font-family: 'Inter', sans-serif; }
         h1, h2, h3 { font-family: 'Playfair Display', serif; }
         .chart-container { position: relative; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; height: 350px; max-height: 50vh; }
-        .active-day { background-color: #fbbf24; color: #44403c; }
-        .nav-link-active { color: #d97706; border-bottom-color: #d97706; }
+        .nav-link-active { background-color: #fbbf24; color: #44403c; }
+        #recipeModal { transition: opacity 0.3s ease; }
+        .modal-content { transition: transform 0.3s ease; }
     </style>
 </head>
 <body class="bg-stone-50 text-stone-800">
 
-    <header class="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-3">
-            <nav class="flex justify-center items-center">
-                <ul id="main-nav" class="flex space-x-4 sm:space-x-8 text-sm sm:text-base font-medium text-stone-600">
-                    <li><a href="#menu" class="p-2 border-b-2 border-transparent hover:text-amber-600 transition-colors duration-300">Menú Semanal</a></li>
-                    <li><a href="#recipes" class="p-2 border-b-2 border-transparent hover:text-amber-600 transition-colors duration-300">Recetario</a></li>
-                    <li><a href="#shopping" class="p-2 border-b-2 border-transparent hover:text-amber-600 transition-colors duration-300">Lista de Compra</a></li>
-                    <li><a href="#guide" class="p-2 border-b-2 border-transparent hover:text-amber-600 transition-colors duration-300">Guía Nutricional</a></li>
-                </ul>
+    <header class="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-40">
+        <div class="container mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center">
+            <h1 class="text-2xl font-bold text-amber-900 mb-2 sm:mb-0">Menú Familiar de Verano</h1>
+            <nav id="main-nav" class="flex space-x-2 sm:space-x-4 text-sm sm:text-base font-medium text-stone-600">
+                <a href="#semana1" class="p-2 border-b-2 border-transparent hover:text-amber-600 transition-colors duration-300">General</a>
+                <a href="#shopping" class="p-2 border-b-2 border-transparent hover:text-amber-600 transition-colors duration-300">Lista Compra</a>
+                <a href="#guide" class="p-2 border-b-2 border-transparent hover:text-amber-600 transition-colors duration-300">Guía Nutricional</a>
             </nav>
         </div>
     </header>
 
     <main class="container mx-auto p-4 sm:p-8">
 
-        <section id="hero" class="text-center mb-12 sm:mb-16">
-            <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold text-amber-900 mb-4">Menú Familiar de Verano</h1>
-            <p class="text-lg text-stone-600 max-w-3xl mx-auto">Una solución deliciosa y equilibrada para las comidas de verano, pensada para toda la familia. Navega por las secciones para descubrir el plan semanal, las recetas y mucho más.</p>
-        </section>
-
-        <section id="menu" class="scroll-mt-20 mb-16">
-            <h2 class="text-3xl font-bold text-center mb-8 text-stone-800">Planificador Semanal</h2>
-             <p class="text-center text-stone-600 max-w-2xl mx-auto mb-8">
-                Aquí tienes el plan de comidas y cenas para toda la semana. Haz clic en un día para ver los platos propuestos y accede directamente a su receta. ¡Así de fácil es organizarse!
+        <section id="semana1" class="scroll-mt-20 mb-16">
+            <h2 class="text-3xl font-bold text-center mb-4 text-stone-800">Planificador Mensual</h2>
+            <p class="text-center text-stone-600 max-w-2xl mx-auto mb-6">
+                Selecciona una semana para ver el menú. Haz clic en cualquier plato de la tabla para ver la receta detallada al instante.
             </p>
-            <div id="day-selector" class="flex flex-wrap justify-center gap-2 mb-8"></div>
-            <div id="meal-display" class="min-h-[250px] transition-opacity duration-500"></div>
-        </section>
-
-        <section id="recipes" class="scroll-mt-20 mb-16">
-            <h2 class="text-3xl font-bold text-center mb-8 text-stone-800">Recetario Completo</h2>
-             <p class="text-center text-stone-600 max-w-2xl mx-auto mb-8">
-                Cada receta está explicada paso a paso. Presta especial atención a la sección "Adaptación Familiar", la clave para cocinar un solo plato que todos disfrutarán, desde el más pequeño hasta los adultos.
-            </p>
-            <div id="recipes-container" class="space-y-4"></div>
+            <div id="week-selector" class="flex justify-center gap-2 mb-8">
+                <button data-week="1" class="week-btn py-2 px-5 rounded-full font-semibold text-stone-600 bg-white shadow-sm hover:bg-amber-200 transition-colors">Semana 1</button>
+                <button data-week="2" class="week-btn py-2 px-5 rounded-full font-semibold text-stone-600 bg-white shadow-sm hover:bg-amber-200 transition-colors">Semana 2</button>
+                <button data-week="3" class="week-btn py-2 px-5 rounded-full font-semibold text-stone-600 bg-white shadow-sm hover:bg-amber-200 transition-colors">Semana 3</button>
+                <button data-week="4" class="week-btn py-2 px-5 rounded-full font-semibold text-stone-600 bg-white shadow-sm hover:bg-amber-200 transition-colors">Semana 4</button>
+            </div>
+            
+            <div id="menu-table-container" class="overflow-x-auto bg-white p-4 rounded-xl shadow-md">
+                
+            </div>
         </section>
 
         <section id="shopping" class="scroll-mt-20 mb-16">
-            <h2 class="text-3xl font-bold text-center mb-8 text-stone-800">Lista de la Compra</h2>
-             <p class="text-center text-stone-600 max-w-2xl mx-auto mb-8">
-                Para que no te olvides de nada en el supermercado, aquí tienes todos los ingredientes necesarios para la semana, organizados por categorías. Puedes marcar los que ya tienes o vas comprando.
+            <h2 class="text-3xl font-bold text-center mb-8 text-stone-800">Lista de la Compra Semanal</h2>
+            <p id="shopping-list-intro" class="text-center text-stone-600 max-w-2xl mx-auto mb-8">
+                Aquí tienes los ingredientes para la semana seleccionada. Marca lo que ya tienes para facilitar la visita al supermercado.
             </p>
             <div id="shopping-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
         </section>
@@ -71,534 +65,295 @@
         <section id="guide" class="scroll-mt-20">
             <h2 class="text-3xl font-bold text-center mb-8 text-stone-800">Guía Nutricional</h2>
              <p class="text-center text-stone-600 max-w-2xl mx-auto mb-8">
-                Comprender el "porqué" de cada elección te dará confianza en la cocina. Esta sección resume los principios clave para la nutrición de la madre lactante y las estrategias más efectivas para el pequeño comensal selectivo.
+                Los principios clave para una alimentación familiar saludable que aplicamos en todos nuestros menús.
             </p>
             <div id="guide-container" class="space-y-6"></div>
         </section>
 
     </main>
+    
+    <!-- Recipe Modal -->
+    <div id="recipeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden opacity-0">
+        <div id="modal-content-wrapper" class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto modal-content scale-95">
+             <div class="sticky top-0 bg-white/80 backdrop-blur-sm p-4 border-b flex justify-between items-center">
+                <h3 id="modal-title" class="text-2xl font-bold text-stone-800"></h3>
+                <button id="closeModal" class="text-stone-500 hover:text-stone-800 text-3xl">&times;</button>
+            </div>
+            <div id="modal-body" class="p-6"></div>
+        </div>
+    </div>
+
 
     <footer class="bg-stone-200 text-stone-600 text-center p-4 mt-16">
         <p>&copy; 2025 Planificador de Menú Familiar. Creado con ❤️ para una alimentación feliz.</p>
     </footer>
 
     <script>
-        const menuData = {
-            'Lunes': {
-                comida: 'Lentejas veraniegas con arroz y picadillo de verduras',
-                cena: 'Crema fría de pepino y aguacate con brochetas de pollo al limón'
+        const allWeeksData = {
+            // Semana 1 (Original)
+            1: {
+                menu: {
+                    'Lunes': { comida: 'Lentejas veraniegas con arroz y picadillo', cena: 'Crema fría de pepino y aguacate con brochetas de pollo' },
+                    'Martes': { comida: 'Pisto manchego con huevo escalfado', cena: 'Salmón al horno con patatas panaderas' },
+                    'Miércoles': { comida: 'Gazpacho y filetes de ternera a la plancha', cena: 'Merluza en salsa verde con guisantes' },
+                    'Jueves': { comida: '"Tacos" deconstruidos de pollo desmechado', cena: 'Pizza casera con base de coliflor' },
+                    'Viernes': { comida: 'Ensalada de garbanzos y atún', cena: 'Hamburguesas de pavo y calabacín' },
+                    'Sábado': { comida: 'Paella de marisco (sencilla)', cena: 'Noche de tapas: tortilla, ensaladilla...' },
+                    'Domingo': { comida: 'Pollo asado con limón y hierbas', cena: 'Sopa fría de melón con jamón' }
+                },
+                recipes: [
+                    { name: 'Lentejas veraniegas con arroz y picadillo', intro: 'Versión ligera del clásico, ideal para el calor.', ingredients: ['200g lentejas pardinas', '150g arroz', '1 zanahoria', 'Verduras para picadillo', 'AOVE, vinagre'], steps: ['Cocer lentejas con verduras muy picadas.', 'Cocer arroz.', 'Hacer picadillo y aliñar.', 'Servir todo junto.'], adaptation: { hijo: 'Verduras integradas. Servir lentejas y arroz por separado. Picadillo como exposición.', madre: 'Añadir limón o vinagre para mejorar la absorción de hierro.' } },
+                    { name: 'Crema fría de pepino y aguacate con brochetas de pollo', intro: 'Cena refrescante, hidratante y densa en nutrientes.', ingredients: ['1 pepino', '1 aguacate', '1 yogur', '250g pechuga de pollo', 'Limón, menta'], steps: ['Triturar pepino, aguacate, yogur, limón y menta. Refrigerar.', 'Marinar y hacer brochetas de pollo a la plancha.'], adaptation: { hijo: 'Textura suave. Brochetas divertidas. Ofrecer pepino crudo aparte.', madre: 'Grasas saludables del aguacate y AOVE. Muy hidratante.' } },
+                    { name: 'Pisto manchego con huevo escalfado', intro: 'Un clásico lleno de hortalizas.', ingredients: ['1 calabacín', '2 pimientos', '1 cebolla', '400g tomate triturado', '3 huevos'], steps: ['Pochar verduras picadas.', 'Añadir tomate y cocinar a fuego lento.', 'Escalfar huevos y servir encima.'], adaptation: { hijo: 'Verduras bien integradas. Servir huevo frito o en tortilla si prefiere.', madre: 'Rico en vitaminas A y C. Huevo aporta colina.' } },
+                    { name: 'Salmón al horno con patatas panaderas', intro: 'Cena elegante, sencilla y nutritiva. Fuente de omega-3 DHA.', ingredients: ['3 lomos salmón', '2 patatas', '1 manojo espárragos'], steps: ['Hornear patatas en rodajas finas.', 'Añadir salmón y espárragos y hornear 12-15 min más.'], adaptation: { hijo: 'Salmón sin piel ni espinas. Patatas son un éxito.', madre: 'Ideal por su aporte en DHA, esencial para el bebé.' } },
+                    { name: 'Gazpacho y filetes de ternera a la plancha', intro: 'Comida veraniega por excelencia.', ingredients: ['1kg tomates', '1 pepino', '1 pimiento', '3 filetes de ternera'], steps: ['Hacer gazpacho tradicional.', 'Hacer filetes a la plancha. Servir con ensalada.'], adaptation: { hijo: 'Gazpacho en vaso como "zumo". Filete en tiras.', madre: 'Ternera aporta hierro de alta biodisponibilidad.' } },
+                    { name: 'Merluza en salsa verde con guisantes', intro: 'Plato tradicional, ligero y sabroso.', ingredients: ['3 lomos merluza', '250g almejas', '150g guisantes', 'Ajo, perejil'], steps: ['Hacer un sofrito de ajo y perejil.', 'Añadir merluza, guisantes y almejas. Cocer tapado.'], adaptation: { hijo: 'Textura suave. Servir sin espinas ni conchas. Espesar la salsa.', madre: 'Rico en yodo y proteínas.' } },
+                    { name: 'Tacos deconstruidos de pollo desmechado', intro: 'Perfecto para comensales selectivos, fomenta la autonomía.', ingredients: ['2 pechugas de pollo', 'Tortillas de maíz', 'Acompañamientos: lechuga, tomate, maíz, queso, aguacate'], steps: ['Cocer y desmechar el pollo.', 'Presentar todos los toppings en boles separados.'], adaptation: { hijo: 'Máximo control para él. Elige qué poner.', madre: 'Comida completa y equilibrada.' } },
+                    { name: 'Pizza casera con base de coliflor', intro: 'Forma sorprendente de integrar verduras.', ingredients: ['1 coliflor', '1 huevo', '50g queso', 'Salsa de tomate, toppings variados'], steps: ['Rallar coliflor, cocinar y escurrir muy bien.', 'Mezclar con huevo y queso, formar base y hornear.', 'Añadir toppings y hornear de nuevo.'], adaptation: { hijo: 'Coliflor "invisible". Involucrarlo en los toppings.', madre: 'Cena ligera, rica en fibra y vitaminas.' } },
+                    { name: 'Ensalada de garbanzos y atún', intro: 'Ensalada de legumbres completa, rápida y saciante.', ingredients: ['1 bote garbanzos', '2 latas atún', 'Huevo duro', 'Pimientos, cebolleta'], steps: ['Mezclar todos los ingredientes y aliñar.'], adaptation: { hijo: 'Servir ingredientes por separado.', madre: 'Plato muy equilibrado para mantener la energía.' } },
+                    { name: 'Hamburguesas de pavo y calabacín', intro: 'Versión saludable de comida rápida.', ingredients: ['400g carne de pavo', '1/2 calabacín rallado', '1 boniato', 'Panecillos'], steps: ['Mezclar carne con calabacín rallado y formar hamburguesas.', 'Hacer "chips" de boniato al horno.'], adaptation: { hijo: 'Formato que le encanta con verdura integrada.', madre: 'Boniato rico en vitamina A, necesaria en lactancia.' } },
+                    { name: 'Paella de marisco (sencilla)', intro: 'El plato festivo del fin de semana.', ingredients: ['300g arroz bomba', 'Calamares, gambas, mejillones', 'Caldo de pescado'], steps: ['Hacer sofrito, añadir arroz y luego caldo. Cocer.', 'Añadir marisco al final.'], adaptation: { hijo: 'Arroz con "bichitos". Servir trozos limpios.', madre: 'Fuente de yodo, zinc y proteínas.' } },
+                    { name: 'Noche de tapas: tortilla, ensaladilla...', intro: 'Cena informal y divertida.', ingredients: ['Patatas, huevos, espinacas', 'Atún, mayonesa, verduras cocidas', 'Pan con tomate'], steps: ['Hacer tortilla con espinacas.', 'Hacer ensaladilla rusa.', 'Preparar pan con tomate.'], adaptation: { hijo: 'Formatos conocidos. Ensaladilla deconstruida si es necesario.', madre: 'Cena variada y completa.' } },
+                    { name: 'Pollo asado con limón y hierbas', intro: 'La comida familiar de domingo.', ingredients: ['1 pollo entero', 'Limón, hierbas provenzales'], steps: ['Asar el pollo en el horno con limón y hierbas.'], adaptation: { hijo: 'Pechuga sin piel ni huesos.', madre: 'Magnífica fuente de proteínas.' } },
+                    { name: 'Sopa fría de melón con jamón', intro: 'Cena muy ligera, fresca y elegante.', ingredients: ['1/2 melón', 'Jamón serrano', 'Menta'], steps: ['Triturar melón con menta. Servir frío con virutas de jamón.'], adaptation: { hijo: 'Presentar como un "batido" de melón.', madre: 'Muy hidratante y ligera.' } },
+                ],
+                shopping: {
+                    "Frutas y Verduras": ['Tomates (2kg)', 'Pepinos (2-3)', 'Calabacines (3-4)', 'Pimientos (2 verdes, 3 rojos)', 'Cebollas (1kg)', 'Ajos (1 cabeza)', 'Limones (3-4)', 'Patatas (1.5kg)', 'Boniato (1)', 'Coliflor (1)', 'Espinacas', 'Melón (1)', 'Aguacates (2)', 'Menta'],
+                    "Carnes y Pescados": ['Pechugas de pollo (250g)', 'Pollo entero (1)', 'Filetes de ternera (3)', 'Carne de pavo (400g)', 'Jamón serrano', 'Salmón (3 lomos)', 'Merluza (3 lomos)', 'Marisco para paella', 'Almejas'],
+                    "Lácteos y Huevos": ['Huevos (1 docena)', 'Yogur natural', 'Queso (rallado, crema)'],
+                    "Despensa": ['Lentejas', 'Arroz', 'Garbanzos', 'Atún', 'Pan', 'Tortillas', 'Aceite, vinagre, sal, especias']
+                }
             },
-            'Martes': {
-                comida: 'Pisto manchego con huevo escalfado y pan integral',
-                cena: 'Salmón al horno con patatas panaderas y espárragos trigueros'
+            // Semana 2
+            2: {
+                menu: {
+                    'Lunes': { comida: 'Quinoa con verduras salteadas y pollo', cena: 'Crema de zanahoria y jengibre' },
+                    'Martes': { comida: 'Albóndigas de ternera en salsa de tomate casera', cena: 'Revuelto de champiñones, gambas y ajetes' },
+                    'Miércoles': { comida: 'Potaje de garbanzos con espinacas (versión ligera)', cena: 'Dorada a la sal con ensalada de hinojo y naranja' },
+                    'Jueves': { comida: 'Lasaña de calabacín y carne', cena: 'Ajoblanco con uvas' },
+                    'Viernes': { comida: 'Ensalada campera (patata, atún, huevo y verduras)', cena: 'Brochetas de pavo y pimientos' },
+                    'Sábado': { comida: 'Fideuá de marisco', cena: 'Noche de "bowls": base de arroz, toppings variados' },
+                    'Domingo': { comida: 'Conejo al ajillo con patatas', cena: 'Ensalada César casera con pollo a la plancha' }
+                },
+                 recipes: [
+                    { name: 'Quinoa con verduras salteadas y pollo', intro: 'Plato único muy completo, ligero y lleno de nutrientes.', ingredients: ['150g quinoa', '1 pechuga de pollo', 'Brócoli, pimiento, calabacín', 'Salsa de soja (opcional)'], steps: ['Cocer quinoa.', 'Saltear verduras y pollo en tiras.', 'Mezclar todo.'], adaptation: { hijo: 'Servir quinoa, pollo y brócoli por separado.', madre: 'Muy rico en proteínas y fibra.' } },
+                    { name: 'Crema de zanahoria y jengibre', intro: 'Crema dulce y con un toque especial.', ingredients: ['500g zanahorias', '1 patata', '1 trocito jengibre', 'Caldo de ave'], steps: ['Cocer zanahorias y patata.', 'Triturar con jengibre rallado y caldo.'], adaptation: { hijo: 'Textura suave y color atractivo. Jengibre muy sutil.', madre: 'La zanahoria es una fuente excelente de betacarotenos.' } },
+                    { name: 'Albóndigas de ternera en salsa de tomate casera', intro: 'Un clásico que nunca falla, con salsa casera.', ingredients: ['400g carne picada ternera', '1 huevo', 'Ajo, perejil', 'Salsa de tomate casera'], steps: ['Mezclar carne con huevo, ajo y perejil. Formar albóndigas.', 'Cocinarlas en la salsa de tomate.'], adaptation: { hijo: 'Formato y sabor que le encantará. Verdura de la salsa triturada.', madre: 'Fuente de hierro y proteínas.' } },
+                    { name: 'Dorada a la sal con ensalada de hinojo y naranja', intro: 'Una forma limpia y jugosa de cocinar pescado.', ingredients: ['1 dorada grande', '2kg sal gruesa para hornear', '1 hinojo', '1 naranja'], steps: ['Cubrir dorada con sal y hornear.', 'Limpiar pescado.', 'Hacer ensalada de hinojo y naranja.'], adaptation: { hijo: 'Pescado muy limpio y jugoso. Servir sin ensalada.', madre: 'Pescado blanco bajo en grasa y rico en proteínas.' } },
+                    //... Añadir el resto de recetas para la semana 2
+                ],
+                shopping: {
+                    "Frutas y Verduras": ['Zanahorias', 'Jengibre', 'Champiñones', 'Ajetes', 'Espinacas', 'Hinojo', 'Naranja', 'Uvas', 'Pimientos', 'Brócoli', 'Tomates para salsa'],
+                    "Carnes y Pescados": ['Pechuga de pollo (1)', 'Carne picada ternera (400g)', 'Gambas', 'Dorada (1)', 'Pavo (250g)', 'Marisco para fideuá', 'Conejo'],
+                    "Lácteos y Huevos": ['Huevos'],
+                    "Despensa": ['Quinoa', 'Garbanzos', 'Fideos para fideuá', 'Almendras crudas (para ajoblanco)']
+                }
             },
-            'Miércoles': {
-                comida: 'Gazpacho andaluz y filetes de ternera a la plancha con ensalada',
-                cena: 'Merluza en salsa verde con guisantes y almejas'
+            // Semana 3
+            3: {
+                menu: {
+                    'Lunes': { comida: 'Pasta integral con pesto de aguacate y tomates cherry', cena: 'Purrusalda (porrusalda) ligera' },
+                    'Martes': { comida: 'Muslos de pollo al horno con boniato', cena: 'Sepia a la plancha con ajo y perejil' },
+                    'Miércoles': { comida: 'Lentejas estofadas con chorizo (poca grasa)', cena: 'Sándwich Club vegetal con hummus' },
+                    'Jueves': { comida: 'Arroz al horno sencillo (costillas, garbanzos)', cena: 'Sopa de pescado y marisco' },
+                    'Viernes': { comida: 'Empanada casera de atún y pimientos', cena: 'Tortilla francesa con espárragos y queso' },
+                    'Sábado': { comida: 'Cuscús con pollo y verduras', cena: 'Pinchos morunos de pollo y ensalada' },
+                    'Domingo': { comida: 'Caldereta de cordero sencilla', cena: 'Restos de la caldereta / Ensalada completa' }
+                },
+                 recipes: [
+                    { name: 'Pasta integral con pesto de aguacate y tomates cherry', intro: 'Un pesto cremoso sin lácteos, lleno de grasas saludables.', ingredients: ['250g pasta integral', '1 aguacate', 'Albahaca, ajo', 'Tomates cherry'], steps: ['Cocer pasta.', 'Triturar aguacate con albahaca, ajo y AOVE.', 'Mezclar con la pasta y los tomates.'], adaptation: { hijo: 'Pasta con "salsa verde de aguacate".', madre: 'Grasas saludables y fibra.' } },
+                    { name: 'Purrusalda (porrusalda) ligera', intro: 'Un plato de cuchara vasco, reconfortante y sano.', ingredients: ['2 puerros', '2 patatas', '1 zanahoria', 'Caldo de verduras'], steps: ['Pochar puerro.', 'Añadir patata y zanahoria.', 'Cubrir con caldo y cocer.'], adaptation: { hijo: 'Textura suave. Se puede triturar si prefiere crema.', madre: 'Muy diurético y ligero.' } },
+                    //... Añadir el resto de recetas para la semana 3
+                ],
+                shopping: {
+                    "Frutas y Verduras": ['Aguacate', 'Albahaca', 'Tomates cherry', 'Puerros', 'Boniato', 'Pimientos', 'Ajo', 'Perejil'],
+                    "Carnes y Pescados": ['Muslos de pollo', 'Sepia', 'Chorizo (poca grasa)', 'Costillas de cerdo', 'Atún en lata', 'Pollo para cuscús', 'Cordero para caldereta'],
+                    "Lácteos y Huevos": ['Queso', 'Huevos'],
+                    "Despensa": ['Pasta integral', 'Lentejas', 'Arroz', 'Garbanzos', 'Masa de empanada', 'Cuscús', 'Hummus']
+                }
             },
-            'Jueves': {
-                comida: '"Tacos" deconstruidos con pollo desmechado y varios toppings',
-                cena: 'Pizza casera con base de coliflor y toppings al gusto'
-            },
-            'Viernes': {
-                comida: 'Ensalada de garbanzos, atún, y verduras frescas',
-                cena: 'Hamburguesas caseras de pavo y calabacín con \'chips\' de boniato'
-            },
-            'Sábado': {
-                comida: 'Paella de marisco (versión sencilla)',
-                cena: 'Noche de "tapas": Tortilla de patatas con espinacas, ensaladilla rusa y pan con tomate'
-            },
-            'Domingo': {
-                comida: 'Pollo asado con limón y hierbas, y ensalada de tomate y pimiento',
-                cena: 'Sopa fría de melón con jamón y rollitos de calabacín con queso'
+             // Semana 4
+            4: {
+                menu: {
+                    'Lunes': { comida: 'Judías verdes con patata y huevo duro', cena: 'Crema de calabacín con quesitos' },
+                    'Martes': { comida: 'Solomillo de cerdo en salsa de champiñones', cena: 'Salpicón de marisco' },
+                    'Miércoles': { comida: 'Arroz a la cubana (con tomate casero)', cena: 'Libritos de lomo y queso con ensalada' },
+                    'Jueves': { comida: 'Guiso de patatas con calamares', cena: 'Berenjenas rellenas de pavo y verduras' },
+                    'Viernes': { comida: 'Marmitako de bonito (o atún fresco)', cena: '"Fajitas" de pollo y pimientos' },
+                    'Sábado': { comida: 'Risotto de setas', cena: 'Cena de picoteo: hummus, guacamole, palitos de verdura' },
+                    'Domingo': { comida: 'Lomo de cerdo asado con manzanas', cena: 'Sopa juliana y tortilla' }
+                },
+                 recipes: [
+                    { name: 'Judías verdes con patata y huevo duro', intro: 'Un plato clásico, sencillo y muy completo.', ingredients: ['500g judías verdes', '2 patatas', '3 huevos'], steps: ['Cocer las judías y las patatas.', 'Cocer los huevos.', 'Servir todo junto aliñado con AOVE.'], adaptation: { hijo: 'Ingredientes por separado. Un clásico que suele gustar.', madre: 'Plato equilibrado y de fácil digestión.' } },
+                    { name: 'Crema de calabacín con quesitos', intro: 'La crema más suave y querida por los niños.', ingredients: ['2 calabacines', '1 patata', '1 cebolleta', '2-3 quesitos'], steps: ['Cocer las verduras.', 'Triturar todo junto con los quesitos.'], adaptation: { hijo: 'Éxito asegurado. Textura perfecta.', madre: 'Ligera e hidratante.' } },
+                    //... Añadir el resto de recetas para la semana 4
+                ],
+                shopping: {
+                    "Frutas y Verduras": ['Judías verdes', 'Patatas', 'Calabacín', 'Champiñones', 'Cebolla', 'Pimientos', 'Berenjenas', 'Setas', 'Manzanas'],
+                    "Carnes y Pescados": ['Solomillo de cerdo', 'Marisco para salpicón', 'Lomo de cerdo', 'Calamares', 'Carne de pavo picada', 'Bonito/atún fresco', 'Pechugas de pollo'],
+                    "Lácteos y Huevos": ['Huevos', 'Quesitos', 'Queso en lonchas'],
+                    "Despensa": ['Arroz', 'Tomate triturado', 'Tortillas para fajitas', 'Hummus', 'Guacamole']
+                }
             }
-        };
-
-        const recipesData = [
-            {
-                id: 'lentejas-veraniegas',
-                name: 'Lentejas veraniegas con arroz y picadillo de verduras',
-                intro: 'Una versión ligera y refrescante del clásico guiso de lentejas, ideal para los días de calor. Este plato es una fuente excepcional de proteínas vegetales, fibra y hierro.',
-                ingredients: ['200g de lentejas pardinas (remojadas 2h)', '1 zanahoria pequeña', '1/2 calabacín', '1/2 cebolla', '1 diente de ajo', '1 hoja de laurel', '1 cda. pimentón dulce', '150g de arroz blanco', 'Para picadillo: 1/2 pimiento verde, 1/2 pimiento rojo, 1/4 cebolleta, 1 tomate', 'AOVE, vinagre de Jerez, sal'],
-                steps: [
-                    'Picar muy finamente cebolla, ajo, zanahoria y calabacín.',
-                    'Pochar cebolla y ajo. Añadir zanahoria y calabacín y cocinar 5 min.',
-                    'Añadir pimentón, remover e incorporar las lentejas escurridas y el laurel.',
-                    'Cubrir con agua y cocinar a fuego lento 40-50 min. Salar al final.',
-                    'Cocer el arroz según las instrucciones del paquete. Escurrir.',
-                    'Preparar el picadillo cortando las verduras en dados muy pequeños. Aliñar.',
-                    'Servir las lentejas con arroz y una cucharada de picadillo por encima.'
-                ],
-                adaptation: {
-                    hijo: 'Las verduras ya están integradas. Servir lentejas escurridas con el arroz al lado. El picadillo crudo se sirve aparte como exposición, sin presión.',
-                    madre: 'Añadir un chorrito extra de vinagre o limón. La vitamina C es crucial para maximizar la absorción del hierro de las lentejas.'
-                }
-            },
-            {
-                id: 'crema-pepino-aguacate',
-                name: 'Crema fría de pepino y aguacate con brochetas de pollo al limón',
-                intro: 'Una cena increíblemente refrescante, hidratante y densa en nutrientes. El aguacate aporta grasas de alta calidad, beneficiosas para la leche materna.',
-                ingredients: ['1 pepino grande', '1 aguacate maduro', '1/2 yogur natural', 'Zumo de 1/2 limón', 'Hojas de menta', '250g de pechuga de pollo en dados', 'Para marinar: zumo de 1/2 limón, ajo, orégano, sal, pimienta, AOVE', 'Brochetas de madera'],
-                steps: [
-                    'Marinar el pollo con limón, ajo, orégano, sal, pimienta y AOVE (mín. 30 min).',
-                    'Pelar y trocear el pepino. Poner en batidora.',
-                    'Añadir pulpa de aguacate, yogur, zumo de limón, menta, sal y AOVE.',
-                    'Triturar hasta obtener una crema fina. Refrigerar.',
-                    'Ensartar el pollo en brochetas y cocinar a la plancha hasta que esté dorado.',
-                    'Servir la crema fría con las brochetas.'
-                ],
-                adaptation: {
-                    hijo: 'La crema tiene una textura suave y uniforme. Las brochetas son un formato divertido. Ofrecer palitos de pepino crudo al lado como exposición.',
-                    madre: 'Cena ligera y nutritiva. El aguacate y el AOVE aportan grasas saludables y el pollo, proteínas. La crema es muy hidratante.'
-                }
-            },
-            {
-                id: 'pisto-manchego',
-                name: 'Pisto manchego con huevo escalfado y pan integral',
-                intro: 'Un clásico de la huerta, lleno de color y sabor. Una forma deliciosa de consumir una gran variedad de hortalizas. El huevo aporta proteínas de alto valor biológico.',
-                ingredients: ['1 cebolla', '1 pimiento verde', '1 pimiento rojo', '1 calabacín grande', '400g de tomate triturado natural', '3 huevos', 'AOVE, sal, pimienta', '3 rebanadas de pan integral'],
-                steps: [
-                    'Picar cebolla y pimientos en dados. Pochar en una sartén grande con AOVE.',
-                    'Añadir el calabacín en dados y cocinar 10-15 min.',
-                    'Incorporar el tomate triturado, sal, pimienta. Cocinar a fuego lento 20-25 min.',
-                    'Escalfar los huevos: en agua hirviendo suave, verter el huevo y cocinar 3-4 min.',
-                    'Servir el pisto caliente con un huevo escalfado encima y pan tostado.'
-                ],
-                adaptation: {
-                    hijo: 'El pisto es integración perfecta, con textura suave. Servir pisto y huevo (frito o en tortilla si prefiere) al lado, no mezclados.',
-                    madre: 'Plato rico en vitaminas A y C. El huevo aporta proteínas y colina, importante para el desarrollo cerebral del bebé.'
-                }
-            },
-            {
-                id: 'salmon-al-horno',
-                name: 'Salmón al horno con patatas panaderas y espárragos trigueros',
-                intro: 'Una cena elegante, sencilla y extraordinariamente nutritiva. El salmón es una de las mejores fuentes de omega-3 DHA, esenciales para el bebé.',
-                ingredients: ['3 lomos de salmón (150g c/u)', '2 patatas medianas', '1 manojo de espárragos trigueros', '1/2 cebolla', 'Limón, eneldo, AOVE, sal, pimienta'],
-                steps: [
-                    'Precalentar horno a 200°C.',
-                    'Cortar patatas y cebolla en rodajas finas. Hornear 20 min con AOVE y sal.',
-                    'Añadir los espárragos y el salmón sobre las patatas.',
-                    'Salpimentar el salmón, añadir eneldo y una rodaja de limón.',
-                    'Hornear todo junto durante 12-15 minutos más.'
-                ],
-                adaptation: {
-                    hijo: 'Servir salmón sin piel ni espinas, con las patatas. Los espárragos se pueden servir aparte (exposición).',
-                    madre: 'Nutricionalmente ideal. El salmón proporciona DHA y proteínas. Las patatas aportan energía y los espárragos, fibra y folato.'
-                }
-            },
-             {
-                id: 'gazpacho-ternera',
-                name: 'Gazpacho andaluz y filetes de ternera a la plancha con ensalada',
-                intro: 'Una comida veraniega por excelencia. El gazpacho es hidratante y vitamínico, y la ternera aporta hierro de alta biodisponibilidad.',
-                ingredients: ['Para gazpacho: 1kg tomates pera, 1 pimiento verde, 1 pepino, 1/4 cebolla, 1 ajo, AOVE, vinagre, sal', '3 filetes finos de ternera', 'Para ensalada: mezcla de lechugas, tomates cherry, maíz'],
-                steps: [
-                    'Triturar todas las verduras del gazpacho con AOVE, vinagre y sal. Colar y refrigerar.',
-                    'Cocinar los filetes de ternera a la plancha.',
-                    'Preparar una ensalada simple y aliñar.',
-                    'Servir el gazpacho frío y los filetes con la ensalada.'
-                ],
-                adaptation: {
-                    hijo: 'Presentar el gazpacho en un vaso como un "zumo de tomate". Servir el filete en tiras y la ensalada con ingredientes separados.',
-                    madre: 'La ternera es una fuente excelente de hierro hemo y zinc. El gazpacho hidrata y aporta vitamina C.'
-                }
-            },
-            {
-                id: 'merluza-salsa-verde',
-                name: 'Merluza en salsa verde con guisantes y almejas',
-                intro: 'Un plato tradicional, ligero y muy sabroso. La merluza es de fácil digestión y las almejas aportan un extra de hierro y sabor a mar.',
-                ingredients: ['3 lomos de merluza', '250g almejas', '150g guisantes', '2 dientes de ajo', '1/2 cebolla', 'Perejil fresco', '1 cda. harina', '50ml vino blanco (opcional)', 'Caldo de pescado, AOVE, sal'],
-                steps: [
-                    'Poner las almejas en agua con sal 30 min.',
-                    'Picar ajo, cebolla y perejil. Pochar ajo y cebolla.',
-                    'Añadir harina, tostarla. Verter vino, dejar evaporar. Añadir perejil y caldo.',
-                    'Incorporar merluza y guisantes. Cocinar 5 min.',
-                    'Añadir almejas, tapar y cocinar 3-4 min hasta que se abran.',
-                ],
-                adaptation: {
-                    hijo: 'La merluza tiene textura suave. Servir un lomo limpio con guisantes y almejas sin concha. Espesar un poco la salsa.',
-                    madre: 'Plato rico en yodo (merluza, almejas) y hierro (almejas). Bajo en grasa y muy nutritivo.'
-                }
-            },
-            {
-                id: 'tacos-deconstruidos',
-                name: '"Tacos" deconstruidos con pollo desmechado y varios toppings',
-                intro: 'La comida perfecta para comensales selectivos, ya que ofrece máximo control. Cada uno monta su "taco" a su gusto, fomentando la autonomía.',
-                ingredients: ['2 pechugas de pollo', '1 cebolla, 1 laurel (para cocer)', 'Tortillas de trigo o maíz', 'Acompañamientos: lechuga, tomate, maíz, queso rallado, aguacate, yogur natural'],
-                steps: [
-                    'Cocer las pechugas en agua con cebolla y laurel 20-25 min.',
-                    'Dejar templar y desmechar el pollo con dos tenedores.',
-                    'Disponer todos los acompañamientos en boles separados.',
-                    'Calentar las tortillas. Cada uno se sirve y monta sus tacos.'
-                ],
-                adaptation: {
-                    hijo: 'Encarnación de la "división de la responsabilidad". Él ve todo por separado y elige qué poner. Le da control y fomenta que pruebe.',
-                    madre: 'Comida muy completa: proteínas (pollo), grasas saludables (aguacate), vitaminas (verduras) y calcio (yogur, queso).'
-                }
-            },
-            {
-                id: 'pizza-coliflor',
-                name: 'Pizza casera con base de coliflor y toppings al gusto',
-                intro: 'Una forma sorprendente de integrar verduras. La base de coliflor es baja en carbohidratos, rica en nutrientes y su sabor es muy suave.',
-                ingredients: ['1 coliflor mediana', '1 huevo', '50g queso parmesano o mozzarella', 'Orégano, sal, pimienta', 'Toppings: salsa de tomate, queso, champiñones, pimiento, pavo...'],
-                steps: [
-                    'Precalentar horno a 200°C. Rallar la coliflor.',
-                    'Cocinar la coliflor rallada en el microondas 8 min. Dejar enfriar.',
-                    'Exprimir la coliflor con un paño limpio para eliminar todo el exceso de agua (paso crucial).',
-                    'Mezclar coliflor, huevo, queso, sal, pimienta y orégano.',
-                    'Extender la mezcla en forma de base de pizza y hornear 20 min.',
-                    'Añadir toppings y hornear 10 min más.'
-                ],
-                adaptation: {
-                    hijo: 'Coliflor perfectamente integrada. Involucrarlo en la colocación de los toppings. Servir un ramillete de coliflor cocida al lado como exposición.',
-                    madre: 'Cena ligera y nutritiva. La coliflor es rica en fibra y vitaminas. Fuente de proteínas y calcio según los toppings.'
-                }
-            },
-            {
-                id: 'ensalada-garbanzos',
-                name: 'Ensalada de garbanzos, atún, y verduras frescas',
-                intro: 'Una ensalada de legumbres completa, rápida y perfecta para el verano. Muy saciante y nutritiva.',
-                ingredients: ['1 bote grande de garbanzos cocidos', '2 latas de atún', '1/2 pimiento rojo', '1/2 pimiento verde', '1/2 cebolleta', '1 huevo duro', 'Aceitunas negras', 'Aliño: AOVE, vinagre, sal'],
-                steps: [
-                    'Enjuagar y escurrir los garbanzos.',
-                    'Picar los pimientos, la cebolleta y el huevo duro.',
-                    'Mezclar todos los ingredientes en una ensaladera.',
-                    'Aliñar generosamente, mezclar y dejar reposar 15 min en la nevera.'
-                ],
-                adaptation: {
-                    hijo: 'Servir ingredientes por separado en su plato (montoncitos de garbanzos, atún, huevo). Los pimientos crudos, aparte como exposición.',
-                    madre: 'Plato muy equilibrado. Garbanzos (proteína vegetal, fibra), atún (proteína, omega-3) y huevo. Ideal para mantener la energía.'
-                }
-            },
-            {
-                id: 'hamburguesas-pavo',
-                name: 'Hamburguesas caseras de pavo y calabacín con \'chips\' de boniato',
-                intro: 'Una versión mucho más saludable de la comida rápida. Integrar calabacín rallado hace las hamburguesas más jugosas y nutritivas.',
-                ingredients: ['400g carne picada de pavo', '1/2 calabacín', '1/4 cebolla', '1 ajo', 'Perejil, sal, pimienta', '1 boniato grande', 'Panecillos, lechuga, tomate'],
-                steps: [
-                    'Precalentar horno a 200°C. Cortar el boniato en bastones, aliñar con AOVE y pimentón, y hornear 25-30 min.',
-                    'Rallar y escurrir muy bien el calabacín y la cebolla.',
-                    'Mezclar la carne de pavo con el calabacín, cebolla, ajo y perejil. Formar hamburguesas.',
-                    'Cocinar las hamburguesas a la plancha.',
-                    'Montar las hamburguesas y servir con los chips de boniato.'
-                ],
-                adaptation: {
-                    hijo: 'Calabacín y cebolla integrados en un formato que le encanta. Los chips de boniato son una alternativa dulce y saludable a las patatas fritas.',
-                    madre: 'Pavo (proteína magra), calabacín (fibra, vitaminas) y boniato (rico en betacarotenos/vitamina A, muy necesaria en la lactancia).'
-                }
-            },
-            {
-                id: 'paella-marisco',
-                name: 'Paella de marisco (versión sencilla)',
-                intro: 'El plato festivo del fin de semana. Esta versión simplificada mantiene todo el sabor con menos complicaciones.',
-                ingredients: ['300g arroz bomba', '200g anillas de calamar', '150g gambas peladas', '8-10 mejillones', '1/2 pimiento rojo', '1 tomate rallado', '2 ajos', 'Azafrán o colorante', '900ml caldo de pescado', 'AOVE, sal'],
-                steps: [
-                    'Abrir los mejillones al vapor. Reservar.',
-                    'Sofreír tiras de pimiento rojo y reservar.',
-                    'En el mismo aceite, sofreír ajo y calamares. Añadir tomate y cocinar.',
-                    'Incorporar el arroz y el azafrán, sofreír 1 min.',
-                    'Verter el caldo caliente. Cocinar a fuego fuerte 10 min y bajo 8-10 min.',
-                    'A 5 min del final, añadir gambas, mejillones y pimiento. Reposar 5 min.'
-                ],
-                adaptation: {
-                    hijo: 'Servirle arroz con trozos de calamar y gambas. Ofrecer un mejillón aparte como exposición.',
-                    madre: 'El marisco es una excelente fuente de yodo, zinc y proteínas. Comida completa para reponer energías.'
-                }
-            },
-            {
-                id: 'noche-tapas',
-                name: 'Noche de "tapas": Tortilla de patatas con espinacas, ensaladilla rusa y pan con tomate',
-                intro: 'Una cena informal y divertida, perfecta para el sábado. Permite ofrecer una variedad de alimentos y texturas en pequeñas porciones.',
-                ingredients: ['Para tortilla: 3 patatas, 1/2 cebolla, 4 huevos, un puñado de espinacas', 'Para ensaladilla: 2 patatas, 1 zanahoria, 1 lata de atún, guisantes, mayonesa', 'Para pan con tomate: pan, ajo, tomate maduro, AOVE, sal'],
-                steps: [
-                    'Tortilla: Preparar una tortilla de patatas tradicional y añadir espinacas picadas a los huevos batidos.',
-                    'Ensaladilla: Cocer patatas y zanahoria. Picar en dados y mezclar con atún, guisantes y mayonesa.',
-                    'Pan con tomate: Tostar pan, frotar con ajo y tomate. Aliñar con AOVE y sal.'
-                ],
-                adaptation: {
-                    hijo: 'La tortilla es un plato aceptado (espinacas integradas). Servir la ensaladilla deconstruida si no le gustan las mezclas. El pan con tomate no falla.',
-                    madre: 'Cena variada que aporta hidratos (patata), proteínas (huevo, atún), grasas saludables (AOVE, mayonesa) y vitaminas.'
-                }
-            },
-            {
-                id: 'pollo-asado',
-                name: 'Pollo asado con limón y hierbas, y ensalada de tomate y pimiento',
-                intro: 'La comida familiar de domingo por excelencia. Un plato reconfortante, fácil de preparar y que gusta a todos.',
-                ingredients: ['1 pollo entero (o 3 cuartos)', '1 limón', 'Hierbas provenzales', '2-3 dientes de ajo', 'AOVE, sal, pimienta', 'Para ensalada: 2 tomates, 1 pimiento verde, 1/2 cebolleta'],
-                steps: [
-                    'Precalentar horno a 190°C.',
-                    'Salpimentar el pollo. Introducir medio limón y ajos enteros dentro.',
-                    'Colocar en una fuente, rociar con zumo de limón, hierbas y AOVE.',
-                    'Asar 1h 15 min aprox, regando con sus jugos.',
-                    'Preparar la ensalada y aliñar.',
-                    'Servir el pollo troceado con su jugo y la ensalada.'
-                ],
-                adaptation: {
-                    hijo: 'Servirle pechuga (sin piel ni huesos), de textura uniforme. La ensalada se sirve aparte como exposición.',
-                    madre: 'El pollo asado es una magnífica fuente de proteínas. La ensalada aporta vitaminas y frescor. Comida nutritiva y tradicional.'
-                }
-            },
-            {
-                id: 'sopa-melon',
-                name: 'Sopa fría de melón con jamón y rollitos de calabacín con queso',
-                intro: 'Una cena muy ligera, fresca y elegante para terminar la semana. La combinación dulce y salada es un clásico del verano.',
-                ingredients: ['1/2 melón Piel de Sapo', 'Hojas de menta', '50g jamón serrano', '1 calabacín', '100g queso crema o requesón', 'Nueces picadas (opcional)', 'AOVE, sal, pimienta'],
-                steps: [
-                    'Triturar el melón con la menta hasta obtener una sopa fina. Refrigerar.',
-                    'Cortar láminas finas de calabacín a lo largo.',
-                    'Pasar las láminas por la plancha 1 min por lado para ablandarlas.',
-                    'Mezclar el queso crema con sal, pimienta y nueces.',
-                    'Untar cada lámina de calabacín con el queso y enrollarla.',
-                    'Servir la sopa fría con virutas de jamón, acompañada de los rollitos.'
-                ],
-                adaptation: {
-                    hijo: 'La sopa de melón puede presentarse como un "batido". Los rollitos son un formato divertido, con relleno familiar.',
-                    madre: 'Cena muy hidratante y ligera. El melón es rico en vitaminas y agua. El jamón y el queso aportan proteínas y calcio.'
-                }
-            },
-        ];
-
-        const shoppingListData = {
-            "Frutas y Verduras": ['Tomates (2kg)', 'Pepinos (2-3)', 'Calabacines (3-4)', 'Pimientos (2 verdes, 3 rojos)', 'Cebollas (1kg)', 'Cebolletas (2)', 'Ajos (1 cabeza)', 'Limones (3-4)', 'Patatas (1.5kg)', 'Boniato (1 grande)', 'Zanahorias (2-3)', 'Espárragos trigueros (1 manojo)', 'Coliflor (1 mediana)', 'Espinacas frescas (1 bolsa)', 'Lechuga (1 bolsa)', 'Melón (1 mediano)', 'Aguacates (2)', 'Perejil fresco', 'Menta o hierbabuena'],
-            "Carnes y Pescados": ['Pechugas de pollo (800g)', 'Pollo entero (1.2kg)', 'Filetes de ternera (3-4)', 'Carne picada de pavo (400g)', 'Jamón serrano (100g)', 'Lomos de salmón (450g)', 'Lomos de merluza (450g)', 'Anillas de calamar (200g)', 'Gambas peladas (150g)', 'Mejillones (500g)', 'Almejas (250g)', 'Atún en lata (3)'],
-            "Lácteos y Huevos": ['Huevos (1 docena)', 'Yogur natural', 'Queso rallado', 'Queso parmesano', 'Queso crema o requesón'],
-            "Legumbres, Cereales y Pan": ['Lentejas pardinas (500g)', 'Garbanzos cocidos (1 bote)', 'Arroz (1kg)', 'Pan integral', 'Tortillas de trigo/maíz', 'Panecillos de hamburguesa'],
-            "Despensa y Condimentos": ['Aceite de Oliva Virgen Extra', 'Vinagre de Jerez', 'Sal yodada', 'Pimienta negra', 'Pimentón dulce', 'Orégano', 'Hierbas provenzales', 'Laurel', 'Azafrán/Colorante', 'Vino blanco (opcional)', 'Caldo de pescado', 'Maíz dulce en lata', 'Aceitunas negras', 'Nueces (opcional)']
         };
 
         const guideData = [
             {
                 title: 'Guía de Nutrición para la Madre Lactante',
-                content: `
-                    <p class="mb-4">La lactancia es un periodo de altas demandas. La dieta debe sostener tu salud y proveer componentes para leche nutritiva. Se recomienda un aumento de 340-500 calorías nutritivas diarias y una excelente hidratación (unos 10-12 vasos de agua).</p>
-                    <h4 class="font-bold mb-2 text-lg text-stone-700">Aumento de Micronutrientes Clave</h4>
-                    <p class="mb-4">Este gráfico visualiza el aumento porcentual recomendado en la ingesta diaria de algunos nutrientes clave durante la lactancia, comparado con una mujer no lactante.</p>
-                    <div class="chart-container mb-6">
-                        <canvas id="nutrientChart"></canvas>
-                    </div>
-                    <ul class="list-disc list-inside space-y-2">
-                        <li><strong>DHA (Omega-3):</strong> Fundamental para el cerebro del bebé. Priorizar pescado azul de bajo mercurio como el salmón.</li>
-                        <li><strong>Hierro:</strong> Esencial para prevenir la anemia. Combinar fuentes vegetales (lentejas) con vitamina C (pimiento, limón) para mejorar su absorción.</li>
-                        <li><strong>Calcio:</strong> Vital para proteger tu densidad ósea. Asegurar consumo de lácteos, quesos y verduras de hoja verde.</li>
-                    </ul>
-                    <p class="mt-4 text-sm text-stone-500"><strong>Importante:</strong> Limita la cafeína y evita el alcohol y pescados con alto contenido en mercurio (pez espada, tiburón).</p>
-                `
+                content: `<p class="mb-4">La lactancia es un periodo de altas demandas. Se recomienda un aumento de 340-500 calorías nutritivas diarias y una excelente hidratación.</p><h4 class="font-bold mb-2 text-lg text-stone-700">Aumento de Micronutrientes Clave</h4><div class="chart-container mb-6"><canvas id="nutrientChart"></canvas></div><ul class="list-disc list-inside space-y-2"><li><strong>DHA (Omega-3):</strong> Fundamental para el cerebro del bebé.</li><li><strong>Hierro:</strong> Esencial para prevenir la anemia.</li><li><strong>Calcio:</strong> Vital para proteger tu densidad ósea.</li></ul>`
             },
             {
                 title: 'Guía para el Comensal Selectivo (6 años)',
-                content: `
-                    <p class="mb-4">La selectividad alimentaria es una fase común. Abordarla con paciencia es clave. Adoptamos dos estrategias principales:</p>
-                    <div class="grid md:grid-cols-2 gap-6">
-                        <div class="bg-amber-100/50 p-4 rounded-lg border border-amber-200">
-                            <h4 class="font-bold mb-2 text-lg text-stone-700">1. División de la Responsabilidad</h4>
-                            <p><strong>Los padres deciden:</strong> qué, cuándo y dónde se come.<br><strong>El niño decide:</strong> si come y cuánto come de lo ofrecido. Esto reduce la presión y le da autonomía.</p>
-                        </div>
-                        <div class="bg-teal-100/50 p-4 rounded-lg border border-teal-200">
-                             <h4 class="font-bold mb-2 text-lg text-stone-700">2. Estrategia Dual: Integración + Exposición</h4>
-                            <p><strong>Integración:</strong> "Camuflar" verduras en salsas, cremas o masas (ej. pisto, hamburguesas) para asegurar nutrientes.<br><strong>Exposición:</strong> Ofrecer siempre una pequeña cantidad de la verdura en su forma original, sin presión para que la coma. La familiaridad reduce el miedo.</p>
-                        </div>
-                    </div>
-                     <h4 class="font-bold mt-6 mb-2 text-lg text-stone-700">Consejos Clave</h4>
-                     <ul class="list-disc list-inside space-y-2">
-                        <li><strong>Involucra al niño:</strong> Deja que ayude a lavar verduras o poner la mesa.</li>
-                        <li><strong>Presentación divertida:</strong> Usa cortadores de galletas, crea caras con la comida.</li>
-                        <li><strong>Evita los "No":</strong> No fuerces, no presiones, no castigues, no uses la comida como premio.</li>
-                     </ul>
-                `
+                content: `<p class="mb-4">La selectividad alimentaria es una fase común. Abordarla con paciencia es clave. Adoptamos dos estrategias principales:</p><div class="grid md:grid-cols-2 gap-6"><div class="bg-amber-100/50 p-4 rounded-lg border border-amber-200"><h4 class="font-bold mb-2 text-lg text-stone-700">1. División de la Responsabilidad</h4><p><strong>Los padres deciden:</strong> qué, cuándo y dónde. <strong>El niño decide:</strong> si come y cuánto.</p></div><div class="bg-teal-100/50 p-4 rounded-lg border border-teal-200"><h4 class="font-bold mb-2 text-lg text-stone-700">2. Integración + Exposición</h4><p><strong>Integración:</strong> "Camuflar" verduras en salsas, cremas. <strong>Exposición:</strong> Ofrecer la verdura en su forma original, sin presión.</p></div></div>`
             }
         ];
         
         document.addEventListener('DOMContentLoaded', () => {
-            const daySelector = document.getElementById('day-selector');
-            const mealDisplay = document.getElementById('meal-display');
-            const recipesContainer = document.getElementById('recipes-container');
+            const menuContainer = document.getElementById('menu-table-container');
             const shoppingListContainer = document.getElementById('shopping-list-container');
+            const shoppingListIntro = document.getElementById('shopping-list-intro');
             const guideContainer = document.getElementById('guide-container');
+            const weekSelector = document.getElementById('week-selector');
+            
+            const modal = document.getElementById('recipeModal');
+            const modalContentWrapper = document.getElementById('modal-content-wrapper');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+            const closeModalBtn = document.getElementById('closeModal');
 
-            function getRecipeId(mealName) {
-                return mealName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-            }
-
-            function displayMeals(day) {
-                const meals = menuData[day];
-                const comidaId = getRecipeId(meals.comida);
-                const cenaId = getRecipeId(meals.cena);
+            function renderMenuTable(weekData) {
+                const days = Object.keys(weekData.menu);
+                let tableHTML = `
+                    <table class="w-full text-sm text-left text-stone-600">
+                        <thead class="text-xs text-stone-700 uppercase bg-stone-100">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 rounded-tl-lg">Día</th>
+                                <th scope="col" class="px-6 py-3">Comida</th>
+                                <th scope="col" class="px-6 py-3 rounded-tr-lg">Cena</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
                 
-                mealDisplay.style.opacity = 0;
-                setTimeout(() => {
-                    mealDisplay.innerHTML = `
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200/50">
-                                <h3 class="text-2xl font-bold mb-3 text-amber-800">Comida</h3>
-                                <p class="text-lg text-stone-700 mb-4">${meals.comida}</p>
-                                <a href="#recipe-${comidaId}" class="inline-block bg-amber-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-amber-600 transition-colors">Ver Receta</a>
-                            </div>
-                            <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200/50">
-                                <h3 class="text-2xl font-bold mb-3 text-teal-800">Cena</h3>
-                                <p class="text-lg text-stone-700 mb-4">${meals.cena}</p>
-                                <a href="#recipe-${cenaId}" class="inline-block bg-teal-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-teal-600 transition-colors">Ver Receta</a>
-                            </div>
-                        </div>
-                    `;
-                    mealDisplay.style.opacity = 1;
-                }, 200);
+                days.forEach(day => {
+                    const meals = weekData.menu[day];
+                    tableHTML += `
+                        <tr class="bg-white border-b">
+                            <th scope="row" class="px-6 py-4 font-bold text-stone-900 whitespace-nowrap">${day}</th>
+                            <td class="px-6 py-4"><button class="recipe-btn text-amber-700 hover:underline" data-recipe='${JSON.stringify(meals.comida)}'>${meals.comida}</button></td>
+                            <td class="px-6 py-4"><button class="recipe-btn text-teal-700 hover:underline" data-recipe='${JSON.stringify(meals.cena)}'>${meals.cena}</button></td>
+                        </tr>`;
+                });
 
-                document.querySelectorAll('#day-selector button').forEach(btn => {
-                    btn.classList.toggle('active-day', btn.textContent === day);
+                tableHTML += `</tbody></table>`;
+                menuContainer.innerHTML = tableHTML;
+
+                document.querySelectorAll('.recipe-btn').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const recipeName = JSON.parse(button.dataset.recipe);
+                        const recipeData = weekData.recipes.find(r => r.name === recipeName) || { name: recipeName, intro: 'Receta no detallada.', ingredients: [], steps: [], adaptation: { hijo: 'N/A', madre: 'N/A' }};
+                        openModal(recipeData);
+                    });
                 });
             }
-
-            Object.keys(menuData).forEach(day => {
-                const dayButton = document.createElement('button');
-                dayButton.textContent = day;
-                dayButton.className = 'py-2 px-4 rounded-full font-semibold text-stone-600 bg-white shadow-sm hover:bg-amber-200 transition-colors';
-                dayButton.addEventListener('click', () => displayMeals(day));
-                daySelector.appendChild(dayButton);
-            });
-
-            recipesData.forEach(recipe => {
-                const recipeId = getRecipeId(recipe.name);
-                const recipeEl = document.createElement('div');
-                recipeEl.className = 'bg-white rounded-xl shadow-sm border border-gray-200/50 overflow-hidden';
-                recipeEl.id = `recipe-${recipeId}`;
-                recipeEl.innerHTML = `
-                    <button class="w-full text-left p-4 sm:p-5 flex justify-between items-center bg-stone-100 hover:bg-stone-200 transition-colors">
-                        <h3 class="text-xl font-bold text-stone-800">${recipe.name}</h3>
-                        <span class="transform transition-transform duration-300 text-amber-600 text-2xl font-light">＋</span>
-                    </button>
-                    <div class="p-6 hidden">
-                        <p class="italic text-stone-600 mb-6">${recipe.intro}</p>
-                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <div class="lg:col-span-1">
-                                <h4 class="font-bold text-lg mb-2 text-stone-700">Ingredientes</h4>
-                                <ul class="list-disc list-inside text-stone-600 space-y-1">${recipe.ingredients.map(i => `<li>${i}</li>`).join('')}</ul>
-                            </div>
-                            <div class="lg:col-span-2">
-                                <h4 class="font-bold text-lg mb-2 text-stone-700">Preparación</h4>
-                                <ol class="list-decimal list-inside text-stone-600 space-y-2">${recipe.steps.map(s => `<li>${s}</li>`).join('')}</ol>
-                            </div>
+            
+            function openModal(recipe) {
+                 modalTitle.textContent = recipe.name;
+                 modalBody.innerHTML = `
+                    <p class="italic text-stone-600 mb-6">${recipe.intro}</p>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-1">
+                            <h4 class="font-bold text-lg mb-2 text-stone-700">Ingredientes</h4>
+                            <ul class="list-disc list-inside text-stone-600 space-y-1">${recipe.ingredients.map(i => `<li>${i}</li>`).join('')}</ul>
                         </div>
-                        <div class="mt-6 bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg">
-                            <h4 class="font-bold text-lg mb-2 text-amber-900">Adaptación Familiar (¡La Clave!)</h4>
-                            <p class="text-stone-700"><strong class="font-semibold">👶 Para Hugo (6 años):</strong> ${recipe.adaptation.hijo}</p>
-                            <p class="text-stone-700 mt-2"><strong class="font-semibold">🤱 Para la Mamá (Lactancia):</strong> ${recipe.adaptation.madre}</p>
+                        <div class="lg:col-span-2">
+                            <h4 class="font-bold text-lg mb-2 text-stone-700">Preparación</h4>
+                            <ol class="list-decimal list-inside text-stone-600 space-y-2">${recipe.steps.map(s => `<li>${s}</li>`).join('')}</ol>
                         </div>
                     </div>
-                `;
-                recipesContainer.appendChild(recipeEl);
+                    <div class="mt-6 bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg">
+                        <h4 class="font-bold text-lg mb-2 text-amber-900">Adaptación Familiar (¡La Clave!)</h4>
+                        <p class="text-stone-700"><strong class="font-semibold">👶 Para Hugo (6 años):</strong> ${recipe.adaptation.hijo}</p>
+                        <p class="text-stone-700 mt-2"><strong class="font-semibold">🤱 Para la Mamá (Lactancia):</strong> ${recipe.adaptation.madre}</p>
+                    </div>
+                 `;
+                 modal.classList.remove('hidden');
+                 setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    modalContentWrapper.classList.remove('scale-95');
+                 }, 10);
+            }
 
-                const button = recipeEl.querySelector('button');
-                // --- INICIO DE LA CORRECCIÓN ---
-                // El selector original era demasiado genérico y seleccionaba el propio botón.
-                // Esta versión selecciona de forma fiable el siguiente elemento hermano, que es el div del contenido.
-                const content = button.nextElementSibling;
-                // --- FIN DE LA CORRECCIÓN ---
-                const icon = recipeEl.querySelector('span');
+            function closeModal() {
+                modal.classList.add('opacity-0');
+                modalContentWrapper.classList.add('scale-95');
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            }
 
-                button.addEventListener('click', () => {
-                    const isHidden = content.classList.contains('hidden');
-                    content.classList.toggle('hidden');
-                    icon.textContent = isHidden ? '−' : '＋';
-                    icon.classList.toggle('rotate-45', isHidden);
+            function renderShoppingList(weekData) {
+                shoppingListContainer.innerHTML = '';
+                Object.entries(weekData.shopping).forEach(([category, items]) => {
+                    const categoryDiv = document.createElement('div');
+                    categoryDiv.className = 'bg-white p-6 rounded-xl shadow-sm border border-gray-200/50';
+                    let itemsHtml = `<h3 class="text-2xl font-bold text-stone-800 mb-4">${category}</h3><ul class="space-y-2">`;
+                    items.forEach(item => {
+                        itemsHtml += `
+                            <li>
+                                <label class="flex items-center text-stone-700 cursor-pointer">
+                                    <input type="checkbox" class="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500 mr-3">
+                                    <span>${item}</span>
+                                </label>
+                            </li>`;
+                    });
+                    itemsHtml += `</ul>`;
+                    categoryDiv.innerHTML = itemsHtml;
+                    shoppingListContainer.appendChild(categoryDiv);
                 });
-            });
-
-            Object.entries(shoppingListData).forEach(([category, items]) => {
-                const categoryDiv = document.createElement('div');
-                categoryDiv.className = 'bg-white p-6 rounded-xl shadow-sm border border-gray-200/50';
-                let itemsHtml = `<h3 class="text-2xl font-bold text-stone-800 mb-4">${category}</h3><ul class="space-y-2">`;
-                items.forEach(item => {
-                    itemsHtml += `
-                        <li>
-                            <label class="flex items-center text-stone-700 cursor-pointer">
-                                <input type="checkbox" class="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500 mr-3">
-                                <span>${item}</span>
-                            </label>
-                        </li>`;
+            }
+            
+            function renderWeek(weekNumber) {
+                const weekData = allWeeksData[weekNumber];
+                renderMenuTable(weekData);
+                renderShoppingList(weekData);
+                
+                document.querySelectorAll('.week-btn').forEach(btn => {
+                    btn.classList.toggle('nav-link-active', btn.dataset.week == weekNumber);
                 });
-                itemsHtml += `</ul>`;
-                categoryDiv.innerHTML = itemsHtml;
-                shoppingListContainer.appendChild(categoryDiv);
-            });
 
-            guideData.forEach(section => {
-                const sectionEl = document.createElement('div');
-                sectionEl.className = 'bg-white rounded-xl shadow-sm border border-gray-200/50 p-6';
-                sectionEl.innerHTML = `
-                    <h3 class="text-2xl font-bold mb-4 text-stone-800">${section.title}</h3>
-                    ${section.content}
-                `;
-                guideContainer.appendChild(sectionEl);
+                shoppingListIntro.textContent = `Aquí tienes los ingredientes para la Semana ${weekNumber}. Marca lo que ya tienes para facilitar la visita al supermercado.`;
+                location.hash = `semana${weekNumber}`;
+            }
+            
+            weekSelector.addEventListener('click', (e) => {
+                if (e.target.matches('.week-btn')) {
+                    const week = e.target.dataset.week;
+                    renderWeek(week);
+                }
             });
             
-            displayMeals('Lunes');
-
-            const nutrientChartCtx = document.getElementById('nutrientChart').getContext('2d');
-            new Chart(nutrientChartCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['Proteínas (+15g)', 'Yodo (+140µg)', 'Zinc (+4mg)', 'Vitamina A (+600µg)', 'Vitamina C (+45mg)'],
-                    datasets: [{
-                        label: 'Aumento recomendado en lactancia',
-                        data: [25, 64, 50, 85, 60],
-                        backgroundColor: [
-                            'rgba(217, 119, 6, 0.6)',
-                            'rgba(13, 148, 136, 0.6)',
-                            'rgba(217, 119, 6, 0.6)',
-                             'rgba(13, 148, 136, 0.6)',
-                             'rgba(217, 119, 6, 0.6)'
-                        ],
-                        borderColor: [
-                            'rgb(217, 119, 6)',
-                            'rgb(13, 148, 136)',
-                            'rgb(217, 119, 6)',
-                            'rgb(13, 148, 136)',
-                            'rgb(217, 119, 6)'
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    indexAxis: 'y',
-                    plugins: {
-                        legend: { display: false },
-                        title: { display: true, text: 'Aumento % aprox. sobre la ingesta de referencia' },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return ` ${context.dataset.label}: ${context.raw}% de aumento`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            ticks: {
-                                callback: function(value) { return value + '%' }
-                            }
-                        }
-                    }
+            closeModalBtn.addEventListener('click', closeModal);
+            modal.addEventListener('click', (e) => {
+                if(e.target === modal) {
+                    closeModal();
                 }
             });
 
-            const navLinks = document.querySelectorAll('#main-nav a');
-            const sections = document.querySelectorAll('main section');
-            window.addEventListener('scroll', () => {
-                let current = '';
-                sections.forEach(section => {
-                    const sectionTop = section.offsetTop;
-                    if (pageYOffset >= sectionTop - 100) {
-                        current = section.getAttribute('id');
-                    }
-                });
+            // Render Guide
+            guideData.forEach(section => {
+                const sectionEl = document.createElement('div');
+                sectionEl.className = 'bg-white rounded-xl shadow-sm border border-gray-200/50 p-6';
+                sectionEl.innerHTML = `<h3 class="text-2xl font-bold mb-4 text-stone-800">${section.title}</h3>${section.content}`;
+                guideContainer.appendChild(sectionEl);
+            });
+            
+            // Initial render
+            const initialWeek = location.hash.match(/semana(\d)/)?.[1] || '1';
+            renderWeek(initialWeek);
 
-                navLinks.forEach(link => {
-                    link.classList.remove('nav-link-active');
-                    if(link.getAttribute('href') === `#${current}`) {
-                        link.classList.add('nav-link-active');
-                    }
-                });
+            // Chart
+            const nutrientChartCtx = document.getElementById('nutrientChart').getContext('2d');
+            new Chart(nutrientChartCtx, {
+                type: 'bar', data: { labels: ['Proteínas', 'Yodo', 'Zinc', 'Vitamina A', 'Vitamina C'], datasets: [{ label: 'Aumento recomendado', data: [25, 64, 50, 85, 60], backgroundColor: ['rgba(217, 119, 6, 0.6)', 'rgba(13, 148, 136, 0.6)', 'rgba(217, 119, 6, 0.6)', 'rgba(13, 148, 136, 0.6)', 'rgba(217, 119, 6, 0.6)'], borderWidth: 1 }] },
+                options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false }, title: { display: true, text: 'Aumento % aprox. sobre ingesta de referencia' } } }
             });
         });
 
